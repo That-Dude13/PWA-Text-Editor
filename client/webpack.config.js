@@ -8,7 +8,7 @@ const WorkboxPlugin = require('workbox-webpack-plugin');
 
 module.exports = () => {
   return {
-    mode: 'development',
+    mode: 'production',
     entry: {
       main: './src/js/index.js',
       install: './src/js/install.js'
@@ -17,18 +17,61 @@ module.exports = () => {
       filename: '[name].bundle.js',
       path: path.resolve(__dirname, 'dist'),
     },
-    plugins: [WorkboxPlugin.GenerateSW
-      
-    ],
-    new WorkboxPlugin({
+    plugins: [
+      new WorkboxPlugin({
       clientsClaim: true,
+      
       skipWaiting: true,
-    }),
+      }),
+      ],
+      plugins: [
+        new HtmlWebpackPlugin({
+          template: './public/index.html',
+          filename: './index.html'
+        }),
+      ],
+        plugins: [
+        new InjectManifest({
+          swSrc: './src-sw.js',
+          swDest:'src-sw.js',
+          globDirectory: 'dist/',
+          globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot}'],
+          maximumFileSizeToCacheInBytes: 50000000,
+          maximumFileSizeToCacheOnDiskInBytes: 50000000,
+        }),
+      ],
+      WebpackPwaManifest
+      ({ name, short_name, description, background_color, theme_color, start_url, publicPath, icons }) {
+        return [
+          new WebpackPwaManifest({
+            name: name,
+            short_name: short_name,
+            description: description,
+            background_color: background_color,
+            theme_color: theme_color,
+            start_url: start_url,
+            publicPath: publicPath,
+            icons: icons,
+          }),
+        ]
+      },
   
     module: {
       rules: [
+        {
+          test: /\.(?:js|mjs|cjs)$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                ['@babel/preset-env', { targets: "defaults" }]
         
-      ],
-    },
-  };
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
 };
