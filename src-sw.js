@@ -27,4 +27,37 @@ warmStrategyCache({
 registerRoute(({ request }) => request.mode === 'navigate', pageCache);
 
 // TODO: Implement asset caching
-registerRoute();
+registerRoute(
+  ({ request }) => ["style", "script", "worker"].includes(request.destination),
+  new StaleWhileRevalidate({
+    cacheName: "asset-cache",
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+    ],
+  })
+);
+offlineFallback();
+
+function offlineFallback() {
+  const networkOnly = new StaleWhileRevalidate();
+
+  registerRoute(
+    ({ request }) =>
+      ["style", "script", "worker"].includes(request.destination),
+    async ({ event }) => {
+      try {
+        const cacheResponse = await caches.match(event.request);
+        if (cacheResponse) {
+          return cacheResponse;
+        }
+
+        return networkOnly.handle({ event });
+      } catch (error) {
+        console.error("Error in offline fallback:", error);
+        return new Response("Error in offline fallback");
+      }
+    }
+  );
+}
