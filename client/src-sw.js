@@ -1,14 +1,14 @@
-const { offlineFallback, warmStrategyCache } = require('workbox-recipes');
-const { CacheFirst } = require('workbox-strategies');
-const { registerRoute } = require('workbox-routing');
-const { CacheableResponsePlugin } = require('workbox-cacheable-response');
-const { ExpirationPlugin } = require('workbox-expiration');
-const { precacheAndRoute } = require('workbox-precaching/precacheAndRoute');
+const { offlineFallback, warmStrategyCache } = require("workbox-recipes");
+const { CacheFirst } = require("workbox-strategies");
+const { registerRoute } = require("workbox-routing");
+const { CacheableResponsePlugin } = require("workbox-cacheable-response");
+const { ExpirationPlugin } = require("workbox-expiration");
+const { precacheAndRoute } = require("workbox-precaching/precacheAndRoute");
 
 precacheAndRoute(self.__WB_MANIFEST);
 
 const pageCache = new CacheFirst({
-  cacheName: 'page-cache',
+  cacheName: "page-cache",
   plugins: [
     new CacheableResponsePlugin({
       statuses: [0, 200],
@@ -20,11 +20,44 @@ const pageCache = new CacheFirst({
 });
 
 warmStrategyCache({
-  urls: ['/index.html', '/'],
+  urls: ["/index.html", "/"],
   strategy: pageCache,
 });
 
-registerRoute(({ request }) => request.mode === 'navigate', pageCache);
+registerRoute(({ request }) => request.mode === "navigate", pageCache);
 
 // TODO: Implement asset caching
-registerRoute();
+registerRoute(
+  ({ request }) => ["style", "script", "worker"].includes(request.destination),
+  new StaleWhileRevalidate({
+    cacheName: "asset-cache",
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+    ],
+  })
+);
+offlineFallback();
+
+function offlineFallback() {
+  const networkOnly = new StaleWhileRevalidate();
+
+  registerRoute(
+    ({ request }) =>
+      ["style", "script", "worker"].includes(request.destination),
+    async ({ event }) => {
+      try {
+        const cacheResponse = await caches.match(event.request);
+        if (cacheResponse) {
+          return cacheResponse;
+        }
+
+        return networkOnly.handle({ event });
+      } catch (error) {
+        console.error("Error in offline fallback:", error);
+        return new Response("Error in offline fallback");
+      }
+    }
+  );
+}
