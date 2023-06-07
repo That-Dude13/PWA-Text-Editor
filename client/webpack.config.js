@@ -25,7 +25,7 @@ module.exports = () => {
       ],
       plugins: [
         new HtmlWebpackPlugin({
-          template: './public/index.html',
+          template: './index.html',
           filename: './index.html'
         }),
       
@@ -33,10 +33,10 @@ module.exports = () => {
         new InjectManifest({
           swSrc: './src-sw.js',
           swDest:'src-sw.js',
-          globDirectory: 'dist/',
-          globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot}'],
-          maximumFileSizeToCacheInBytes: 50000000,
-          maximumFileSizeToCacheOnDiskInBytes: 50000000,
+          // globDirectory: 'dist/',
+          // globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot}'],
+          // maximumFileSizeToCacheInBytes: 50000000,
+          // maximumFileSizeToCacheOnDiskInBytes: 50000000,
         }),
       
       // const generateManifest = ({ name, short_name, description, background_color, theme_color, start_url, publicPath, icons }) => {
@@ -64,6 +64,11 @@ module.exports = () => {
   
     module: {
       rules: [
+        {
+          test: /\.css$/i,
+          use: ['style-loader', 'css-loader'],
+        },
+
         {
           test: /\.(?:js|mjs|cjs)$/,
           exclude: /node_modules/,
