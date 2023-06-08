@@ -24,6 +24,7 @@ export const putDb = async (content) => {
 export const getDb = async () => {
   const db = await openDB('jate', 1);
   const transaction = db.transaction('jate', 'readonly');
+  const store = transaction.objectStore('jate');
   const content = store.get(1)
   const result = await content;
   console.log('- data retrieved from the database', result.value);
